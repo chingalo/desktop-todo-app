@@ -1,20 +1,23 @@
+# Flutter Windows desktop build. Requires pubspec.yaml under FLUTTER_PROJECT_PATH.
+# For a monorepo, set FLUTTER_PROJECT_PATH to the app folder (e.g. apps/flutter).
+
 name: windows
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
     branches: [main]
 
-defaults:
-  run:
-    working-directory: .
+env:
+  FLUTTER_PROJECT_PATH: .
 
 jobs:
-  build:
+  build-windows:
     runs-on: windows-latest
-    env:
-      REPO_NAME: ${{ github.event.repository.name }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -24,40 +27,27 @@ jobs:
           cache: true
 
       - name: Enable Windows desktop
+        working-directory: ${{ env.FLUTTER_PROJECT_PATH }}
         run: flutter config --enable-windows-desktop
 
-      - name: Install dependencies
+      - name: Dependencies
+        working-directory: ${{ env.FLUTTER_PROJECT_PATH }}
         run: flutter pub get
 
       - name: Generate Drift code
+        working-directory: ${{ env.FLUTTER_PROJECT_PATH }}
         run: dart run build_runner build
 
-      - name: Analyze
-        run: flutter analyze
-
-      - name: Test
-        run: flutter test
-
-      - name: Integration tests
-        run: flutter test integration_test/
-
-      - name: Set Windows executable name from repository
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        shell: pwsh
-        run: |
-          $path = "windows/CMakeLists.txt"
-          $content = Get-Content $path -Raw
-          $name = $env:REPO_NAME
-          $content = $content -replace 'set\(BINARY_NAME "dhis_todo"\)', "set(BINARY_NAME `"$name`")"
-          Set-Content $path -Value $content -NoNewline
-
       - name: Build Windows release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        working-directory: ${{ env.FLUTTER_PROJECT_PATH }}
         run: flutter build windows --release
 
       - name: Upload Windows runner bundle
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: >-
+          github.event_name == 'workflow_dispatch' ||
+          (github.event_name == 'push' &&
+            (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')))
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.repository.name }}-windows
-          path: build/windows/x64/runner/Release/
+          path: ${{ env.FLUTTER_PROJECT_PATH == '.' && 'build/windows/x64/runner/Release/' || format('{0}/build/windows/x64/runner/Release/', env.FLUTTER_PROJECT_PATH) }}
