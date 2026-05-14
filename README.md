@@ -39,3 +39,13 @@ flutter test integration_test/
 
 CI runs this after `flutter test` in `.github/workflows/` (first run compiles the desktop runner and can take several minutes).
 
+## CI release naming
+
+On **push to `main`**, workflows patch the desktop product name from **`github.event.repository.name`** (the GitHub repository name, not the Dart package name):
+
+- **Artifacts:** `<repository-name>-macos` and `<repository-name>-windows`.
+- **macOS:** `PRODUCT_NAME` in `macos/Runner/Configs/AppInfo.xcconfig` is updated before `flutter build macos`; if the bundle is still `dhis_todo.app`, it is renamed to `<repository-name>.app` before upload.
+- **Windows:** `BINARY_NAME` in `windows/CMakeLists.txt` is updated before `flutter build windows` so the built `.exe` matches the repository name.
+
+PR builds do not patch names or upload artifacts.
+
