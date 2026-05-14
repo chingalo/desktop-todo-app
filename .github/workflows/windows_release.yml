@@ -1,7 +1,4 @@
-# Flutter Windows desktop build. Requires pubspec.yaml under FLUTTER_PROJECT_PATH.
-# For a monorepo, set FLUTTER_PROJECT_PATH to the app folder (e.g. apps/flutter).
-
-name: windows
+name: windows app release
 
 on:
   workflow_dispatch:
