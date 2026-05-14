@@ -1,5 +1,5 @@
 name: dhis_todo
-description: ProgramPilot — offline-first todos with DHIS2 program import (macOS desktop).
+description: ProgramPilot — offline-first todos with DHIS2 program import (Flutter desktop).
 publish_to: "none"
 version: 1.0.0+1
 

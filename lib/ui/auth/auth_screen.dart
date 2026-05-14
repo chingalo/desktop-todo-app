@@ -104,14 +104,14 @@ class _AuthScreenState extends State<AuthScreen>
                     const SizedBox(height: 20),
                     TabBar(
                       controller: _tabs,
-                      tabs: const [
-                        Tab(text: 'Sign in'),
-                        Tab(text: 'Sign up'),
+                      tabs: [
+                        const Tab(key: ValueKey('signin_tab'), text: 'Sign in'),
+                        const Tab(key: ValueKey('signup_tab'), text: 'Sign up'),
                       ],
                     ),
                     const SizedBox(height: 16),
                     SizedBox(
-                      height: 220,
+                      height: 280,
                       child: TabBarView(
                         controller: _tabs,
                         children: [
@@ -131,6 +131,7 @@ class _AuthScreenState extends State<AuthScreen>
                             passwordHint: 'At least 8 characters',
                             emailKey: const ValueKey('signup_email'),
                             passwordKey: const ValueKey('signup_password'),
+                            submitButtonKey: const ValueKey('signup_submit'),
                           ),
                         ],
                       ),
@@ -156,6 +157,7 @@ class _AuthFields extends StatelessWidget {
     this.passwordHint,
     this.emailKey,
     this.passwordKey,
+    this.submitButtonKey,
   });
 
   final TextEditingController email;
@@ -165,6 +167,7 @@ class _AuthFields extends StatelessWidget {
   final String? passwordHint;
   final Key? emailKey;
   final Key? passwordKey;
+  final Key? submitButtonKey;
 
   @override
   Widget build(BuildContext context) {
@@ -196,7 +199,11 @@ class _AuthFields extends StatelessWidget {
           onSubmitted: (_) => onSubmit?.call(),
         ),
         const Spacer(),
-        FilledButton(onPressed: onSubmit, child: Text(actionLabel)),
+        FilledButton(
+          key: submitButtonKey,
+          onPressed: onSubmit,
+          child: Text(actionLabel),
+        ),
       ],
     );
   }

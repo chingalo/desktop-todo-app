@@ -34,12 +34,12 @@ class _ProgramsPageState extends State<ProgramsPage> {
       _error = null;
     });
     try {
+      final db = context.read<AppDatabase>();
       final programs = await _client.fetchPrograms(
         programsUrl: _url.text.trim(),
         username: _user.text.trim(),
         password: _pass.text,
       );
-      final db = context.read<AppDatabase>();
       await db.replaceCachedPrograms(
         programs
             .map(
@@ -168,7 +168,7 @@ class _ProgramsPageState extends State<ProgramsPage> {
                 }
                 return ListView.separated(
                   itemCount: rows.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  separatorBuilder: (context, i) => const Divider(height: 1),
                   itemBuilder: (context, i) {
                     final p = rows[i];
                     return ListTile(

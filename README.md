@@ -1,17 +1,28 @@
-# dhis_todo
+# ProgramPilot (`dhis_todo`)
 
-A new Flutter project.
+Flutter **desktop** app (macOS and Windows): Material 3 UI, offline todos, sign up / sign in, and optional DHIS2 program import with HTTP Basic authentication.
 
-## Getting Started
+Full repository documentation (layout, CI, testing, security) lives in the [parent README](../README.md).
 
-This project is a starting point for a Flutter application.
+## Quick start
 
-A few resources to get you started if this is your first Flutter project:
+```bash
+flutter pub get
+dart run build_runner build   # after editing lib/data/database.dart tables
+flutter analyze
+flutter test
+flutter run -d macos          # or -d windows
+```
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Package vs product name
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- **Dart package:** `dhis_todo` (folder and `pubspec.yaml` name).
+- **Product / UI name:** ProgramPilot.
+
+## Data storage
+
+SQLite via **Drift** (`lib/data/database.dart`). Database file: `program_pilot.sqlite` under application support. Tests use `AppDatabase(NativeDatabase.memory())`.
+
+## Session storage
+
+`lib/state/session_store.dart` defines `SessionStore`; production uses `SecureSessionStore` (Keychain / platform secure storage). Tests inject `InMemorySessionStore` from `test/support/`.
