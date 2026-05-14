@@ -12,6 +12,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   drift: ^2.29.0
   sqlite3: ^2.9.0
+  # Bundles sqlite3.dll on Windows so Drift FK syntax is not parsed by winsqlite3.
+  sqlite3_flutter_libs: ^0.5.42
   path: ^1.9.1
   path_provider: ^2.1.5
   http: ^1.6.0
