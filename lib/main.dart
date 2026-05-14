@@ -60,6 +60,7 @@ class ProgramPilotApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'ProgramPilot',
+      debugShowCheckedModeBanner: false,
       theme: buildProgramPilotTheme(),
       darkTheme: buildProgramPilotTheme(dark: true),
       themeMode: ThemeMode.system,
