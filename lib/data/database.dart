@@ -47,7 +47,21 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-    onCreate: (m) async => await m.createAll(),
+    onCreate: (Migrator m) async {
+      await m.createAll();
+    },
+    onUpgrade: (Migrator m, int from, int to) async {
+      // Increment [schemaVersion] whenever tables/columns change. Run steps in
+      // ascending order so installs that skip app versions still migrate.
+      for (var v = from; v < to; v++) {
+        switch (v) {
+          case 1:
+            // Example when moving to schemaVersion 2:
+            // await m.addColumn(todos, todos.someNewColumn);
+            break;
+        }
+      }
+    },
   );
 
   Future<int> createUser({
