@@ -1,6 +1,9 @@
-import 'package:dhis_todo/state/session_store.dart';
+import 'session_store.dart';
 
-/// In-memory session for unit/widget tests (no platform secure storage).
+/// In-memory session store (no Keychain / secure storage).
+///
+/// Use for **tests** and **integration_test** so desktop harnesses do not
+/// require keychain entitlements. Production [main] uses [SecureSessionStore].
 class InMemorySessionStore implements SessionStore {
   String? _userId;
 

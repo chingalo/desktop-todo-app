@@ -7,7 +7,7 @@ import 'package:dhis_todo/main.dart';
 import 'package:dhis_todo/state/auth_controller.dart';
 import 'package:drift/native.dart';
 
-import 'support/in_memory_session_store.dart';
+import 'package:dhis_todo/state/in_memory_session_store.dart';
 
 /// Drift query streams schedule timers; unmount and close DB before the test ends.
 Future<void> _tearDownApp(WidgetTester tester, AppDatabase database) async {

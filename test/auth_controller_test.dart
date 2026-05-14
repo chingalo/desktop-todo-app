@@ -4,7 +4,7 @@ import 'package:dhis_todo/services/crypto_utils.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'support/in_memory_session_store.dart';
+import 'package:dhis_todo/state/in_memory_session_store.dart';
 
 void main() {
   late AppDatabase db;

@@ -36,6 +36,9 @@ jobs:
       - name: Test
         run: flutter test
 
+      - name: Integration tests
+        run: flutter test integration_test/
+
       - name: Build macOS release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: flutter build macos --release
@@ -45,4 +48,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: program-pilot-macos
-          path: dhis_todo/build/macos/Build/Products/Release/*.app
+          path: build/macos/Build/Products/Release/*.app

@@ -2,8 +2,6 @@
 
 Flutter **desktop** app (macOS and Windows): Material 3 UI, offline todos, sign up / sign in, and optional DHIS2 program import with HTTP Basic authentication.
 
-Full repository documentation (layout, CI, testing, security) lives in the [parent README](../README.md).
-
 ## Quick start
 
 ```bash
@@ -11,7 +9,8 @@ flutter pub get
 dart run build_runner build   # after editing lib/data/database.dart tables
 flutter analyze
 flutter test
-flutter run -d macos          # or -d windows
+flutter test integration_test/   # desktop harness (builds macOS/Windows target)
+flutter run -d macos             # or -d windows
 ```
 
 ## Package vs product name
@@ -21,8 +20,22 @@ flutter run -d macos          # or -d windows
 
 ## Data storage
 
-SQLite via **Drift** (`lib/data/database.dart`). Database file: `program_pilot.sqlite` under application support. Tests use `AppDatabase(NativeDatabase.memory())`.
+SQLite via **Drift** (`lib/data/database.dart`). Database file: `program_pilot.sqlite` under application support. Unit tests use `AppDatabase(NativeDatabase.memory())`.
 
 ## Session storage
 
-`lib/state/session_store.dart` defines `SessionStore`; production uses `SecureSessionStore` (Keychain / platform secure storage). Tests inject `InMemorySessionStore` from `test/support/`.
+`lib/state/session_store.dart` defines `SessionStore`; production uses `SecureSessionStore` (Keychain / platform secure storage). Tests and integration tests use `InMemorySessionStore` in `lib/state/in_memory_session_store.dart` so CI and local harness runs do not require Keychain entitlements for sign-in flows.
+
+## Integration tests
+
+- Package: `integration_test` (see `pubspec.yaml` dev_dependencies).
+- Entry: [`integration_test/app_test.dart`](integration_test/app_test.dart) — runs against the **real desktop harness** (macOS or Windows binary, not `flutter_tester`).
+- Uses `assembleProgramPilotHarness(sessionStore: InMemorySessionStore())` so sign-in flows do not touch the Keychain (avoids entitlement `-34018` in the test binary).
+- One test checks the signed-out auth shell; the other calls `AuthController.signUp` then asserts **Todos** + `NavigationRail` (full TabBarView taps are still unreliable in this harness, so the auth step uses the controller while the rest exercises the live widget tree).
+
+```bash
+flutter test integration_test/
+```
+
+CI runs this after `flutter test` in `.github/workflows/` (first run compiles the desktop runner and can take several minutes).
+
