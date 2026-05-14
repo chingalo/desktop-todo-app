@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -19,6 +18,18 @@ class TodosPage extends StatelessWidget {
     return StreamBuilder<List<Todo>>(
       stream: db.watchTodosForUser(userId),
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                'Could not load todos.\n${snapshot.error}',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
+          );
+        }
         final items = snapshot.data ?? [];
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -63,11 +74,18 @@ class _TodoTile extends StatelessWidget {
       child: ListTile(
         leading: Checkbox(
           value: todo.completed,
-          onChanged: (v) {
+          onChanged: (v) async {
             if (v == null) return;
-            db.updateTodo(
-              todo.copyWith(completed: v, updatedAt: DateTime.now()),
-            );
+            try {
+              await db.updateTodo(
+                todo.copyWith(completed: v, updatedAt: DateTime.now()),
+              );
+            } catch (e) {
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Could not update todo: $e')),
+              );
+            }
           },
         ),
         title: Text(
@@ -80,8 +98,6 @@ class _TodoTile extends StatelessWidget {
         subtitle: Text(
           [
             if (todo.description.isNotEmpty) todo.description,
-            if (todo.dhisProgramId != null)
-              'DHIS program: ${todo.dhisProgramId}',
             'Updated $date',
           ].join(' · '),
           maxLines: 2,
@@ -115,7 +131,15 @@ class _TodoTile extends StatelessWidget {
                     ],
                   ),
                 );
-                if (ok == true) await db.deleteTodo(todo.id);
+                if (ok != true || !context.mounted) return;
+                try {
+                  await db.deleteTodo(todo.id);
+                } catch (e) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Could not delete todo: $e')),
+                  );
+                }
               },
             ),
           ],
@@ -133,9 +157,6 @@ Future<void> _openEditor(
 ) async {
   final titleCtrl = TextEditingController(text: existing?.title ?? '');
   final bodyCtrl = TextEditingController(text: existing?.description ?? '');
-  final programCtrl = TextEditingController(
-    text: existing?.dhisProgramId ?? '',
-  );
   final created = await showDialog<bool>(
     context: context,
     builder: (ctx) {
@@ -157,14 +178,6 @@ Future<void> _openEditor(
                 decoration: const InputDecoration(labelText: 'Notes'),
                 maxLines: 3,
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: programCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'DHIS program id (optional)',
-                  hintText: 'Links this todo to a cached program id',
-                ),
-              ),
             ],
           ),
         ),
@@ -184,23 +197,28 @@ Future<void> _openEditor(
   if (created != true || !context.mounted) return;
   final title = titleCtrl.text.trim();
   if (title.isEmpty) return;
-  final program = programCtrl.text.trim();
-  if (existing == null) {
-    await db.insertTodo(
-      userId: userId,
-      title: title,
-      description: bodyCtrl.text.trim(),
-      dhisProgramId: program.isEmpty ? null : program,
-    );
-  } else {
-    await db.updateTodo(
-      existing.copyWith(
+  try {
+    if (existing == null) {
+      await db.insertTodo(
+        userId: userId,
         title: title,
         description: bodyCtrl.text.trim(),
-        dhisProgramId: Value(program.isEmpty ? null : program),
-        updatedAt: DateTime.now(),
-      ),
-    );
+      );
+    } else {
+      await db.updateTodo(
+        existing.copyWith(
+          title: title,
+          description: bodyCtrl.text.trim(),
+          updatedAt: DateTime.now(),
+        ),
+      );
+    }
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not save todo: $e')),
+      );
+    }
   }
 }
 

@@ -31,6 +31,16 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
   );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _passwordHashMeta = const VerificationMeta(
     'passwordHash',
   );
@@ -67,6 +77,7 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
   List<GeneratedColumn> get $columns => [
     id,
     email,
+    name,
     passwordHash,
     salt,
     createdAt,
@@ -93,6 +104,12 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
       );
     } else if (isInserting) {
       context.missing(_emailMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
     }
     if (data.containsKey('password_hash')) {
       context.handle(
@@ -136,6 +153,10 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
         DriftSqlType.string,
         data['${effectivePrefix}email'],
       )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
       passwordHash: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}password_hash'],
@@ -160,12 +181,14 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
 class User extends DataClass implements Insertable<User> {
   final int id;
   final String email;
+  final String name;
   final String passwordHash;
   final String salt;
   final DateTime createdAt;
   const User({
     required this.id,
     required this.email,
+    required this.name,
     required this.passwordHash,
     required this.salt,
     required this.createdAt,
@@ -175,6 +198,7 @@ class User extends DataClass implements Insertable<User> {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['email'] = Variable<String>(email);
+    map['name'] = Variable<String>(name);
     map['password_hash'] = Variable<String>(passwordHash);
     map['salt'] = Variable<String>(salt);
     map['created_at'] = Variable<DateTime>(createdAt);
@@ -185,6 +209,7 @@ class User extends DataClass implements Insertable<User> {
     return UsersCompanion(
       id: Value(id),
       email: Value(email),
+      name: Value(name),
       passwordHash: Value(passwordHash),
       salt: Value(salt),
       createdAt: Value(createdAt),
@@ -199,6 +224,7 @@ class User extends DataClass implements Insertable<User> {
     return User(
       id: serializer.fromJson<int>(json['id']),
       email: serializer.fromJson<String>(json['email']),
+      name: serializer.fromJson<String>(json['name']),
       passwordHash: serializer.fromJson<String>(json['passwordHash']),
       salt: serializer.fromJson<String>(json['salt']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -210,6 +236,7 @@ class User extends DataClass implements Insertable<User> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'email': serializer.toJson<String>(email),
+      'name': serializer.toJson<String>(name),
       'passwordHash': serializer.toJson<String>(passwordHash),
       'salt': serializer.toJson<String>(salt),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -219,12 +246,14 @@ class User extends DataClass implements Insertable<User> {
   User copyWith({
     int? id,
     String? email,
+    String? name,
     String? passwordHash,
     String? salt,
     DateTime? createdAt,
   }) => User(
     id: id ?? this.id,
     email: email ?? this.email,
+    name: name ?? this.name,
     passwordHash: passwordHash ?? this.passwordHash,
     salt: salt ?? this.salt,
     createdAt: createdAt ?? this.createdAt,
@@ -233,6 +262,7 @@ class User extends DataClass implements Insertable<User> {
     return User(
       id: data.id.present ? data.id.value : this.id,
       email: data.email.present ? data.email.value : this.email,
+      name: data.name.present ? data.name.value : this.name,
       passwordHash: data.passwordHash.present
           ? data.passwordHash.value
           : this.passwordHash,
@@ -246,6 +276,7 @@ class User extends DataClass implements Insertable<User> {
     return (StringBuffer('User(')
           ..write('id: $id, ')
           ..write('email: $email, ')
+          ..write('name: $name, ')
           ..write('passwordHash: $passwordHash, ')
           ..write('salt: $salt, ')
           ..write('createdAt: $createdAt')
@@ -254,13 +285,15 @@ class User extends DataClass implements Insertable<User> {
   }
 
   @override
-  int get hashCode => Object.hash(id, email, passwordHash, salt, createdAt);
+  int get hashCode =>
+      Object.hash(id, email, name, passwordHash, salt, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is User &&
           other.id == this.id &&
           other.email == this.email &&
+          other.name == this.name &&
           other.passwordHash == this.passwordHash &&
           other.salt == this.salt &&
           other.createdAt == this.createdAt);
@@ -269,12 +302,14 @@ class User extends DataClass implements Insertable<User> {
 class UsersCompanion extends UpdateCompanion<User> {
   final Value<int> id;
   final Value<String> email;
+  final Value<String> name;
   final Value<String> passwordHash;
   final Value<String> salt;
   final Value<DateTime> createdAt;
   const UsersCompanion({
     this.id = const Value.absent(),
     this.email = const Value.absent(),
+    this.name = const Value.absent(),
     this.passwordHash = const Value.absent(),
     this.salt = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -282,6 +317,7 @@ class UsersCompanion extends UpdateCompanion<User> {
   UsersCompanion.insert({
     this.id = const Value.absent(),
     required String email,
+    this.name = const Value.absent(),
     required String passwordHash,
     required String salt,
     this.createdAt = const Value.absent(),
@@ -291,6 +327,7 @@ class UsersCompanion extends UpdateCompanion<User> {
   static Insertable<User> custom({
     Expression<int>? id,
     Expression<String>? email,
+    Expression<String>? name,
     Expression<String>? passwordHash,
     Expression<String>? salt,
     Expression<DateTime>? createdAt,
@@ -298,6 +335,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (email != null) 'email': email,
+      if (name != null) 'name': name,
       if (passwordHash != null) 'password_hash': passwordHash,
       if (salt != null) 'salt': salt,
       if (createdAt != null) 'created_at': createdAt,
@@ -307,6 +345,7 @@ class UsersCompanion extends UpdateCompanion<User> {
   UsersCompanion copyWith({
     Value<int>? id,
     Value<String>? email,
+    Value<String>? name,
     Value<String>? passwordHash,
     Value<String>? salt,
     Value<DateTime>? createdAt,
@@ -314,6 +353,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     return UsersCompanion(
       id: id ?? this.id,
       email: email ?? this.email,
+      name: name ?? this.name,
       passwordHash: passwordHash ?? this.passwordHash,
       salt: salt ?? this.salt,
       createdAt: createdAt ?? this.createdAt,
@@ -328,6 +368,9 @@ class UsersCompanion extends UpdateCompanion<User> {
     }
     if (email.present) {
       map['email'] = Variable<String>(email.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
     }
     if (passwordHash.present) {
       map['password_hash'] = Variable<String>(passwordHash.value);
@@ -346,6 +389,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     return (StringBuffer('UsersCompanion(')
           ..write('id: $id, ')
           ..write('email: $email, ')
+          ..write('name: $name, ')
           ..write('passwordHash: $passwordHash, ')
           ..write('salt: $salt, ')
           ..write('createdAt: $createdAt')
@@ -424,17 +468,6 @@ class $TodosTable extends Todos with TableInfo<$TodosTable, Todo> {
     ),
     defaultValue: const Constant(false),
   );
-  static const VerificationMeta _dhisProgramIdMeta = const VerificationMeta(
-    'dhisProgramId',
-  );
-  @override
-  late final GeneratedColumn<String> dhisProgramId = GeneratedColumn<String>(
-    'dhis_program_id',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -466,7 +499,6 @@ class $TodosTable extends Todos with TableInfo<$TodosTable, Todo> {
     title,
     description,
     completed,
-    dhisProgramId,
     createdAt,
     updatedAt,
   ];
@@ -516,15 +548,6 @@ class $TodosTable extends Todos with TableInfo<$TodosTable, Todo> {
         completed.isAcceptableOrUnknown(data['completed']!, _completedMeta),
       );
     }
-    if (data.containsKey('dhis_program_id')) {
-      context.handle(
-        _dhisProgramIdMeta,
-        dhisProgramId.isAcceptableOrUnknown(
-          data['dhis_program_id']!,
-          _dhisProgramIdMeta,
-        ),
-      );
-    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -566,10 +589,6 @@ class $TodosTable extends Todos with TableInfo<$TodosTable, Todo> {
         DriftSqlType.bool,
         data['${effectivePrefix}completed'],
       )!,
-      dhisProgramId: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}dhis_program_id'],
-      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -593,7 +612,6 @@ class Todo extends DataClass implements Insertable<Todo> {
   final String title;
   final String description;
   final bool completed;
-  final String? dhisProgramId;
   final DateTime createdAt;
   final DateTime updatedAt;
   const Todo({
@@ -602,7 +620,6 @@ class Todo extends DataClass implements Insertable<Todo> {
     required this.title,
     required this.description,
     required this.completed,
-    this.dhisProgramId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -614,9 +631,6 @@ class Todo extends DataClass implements Insertable<Todo> {
     map['title'] = Variable<String>(title);
     map['description'] = Variable<String>(description);
     map['completed'] = Variable<bool>(completed);
-    if (!nullToAbsent || dhisProgramId != null) {
-      map['dhis_program_id'] = Variable<String>(dhisProgramId);
-    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -629,9 +643,6 @@ class Todo extends DataClass implements Insertable<Todo> {
       title: Value(title),
       description: Value(description),
       completed: Value(completed),
-      dhisProgramId: dhisProgramId == null && nullToAbsent
-          ? const Value.absent()
-          : Value(dhisProgramId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -648,7 +659,6 @@ class Todo extends DataClass implements Insertable<Todo> {
       title: serializer.fromJson<String>(json['title']),
       description: serializer.fromJson<String>(json['description']),
       completed: serializer.fromJson<bool>(json['completed']),
-      dhisProgramId: serializer.fromJson<String?>(json['dhisProgramId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -662,7 +672,6 @@ class Todo extends DataClass implements Insertable<Todo> {
       'title': serializer.toJson<String>(title),
       'description': serializer.toJson<String>(description),
       'completed': serializer.toJson<bool>(completed),
-      'dhisProgramId': serializer.toJson<String?>(dhisProgramId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -674,7 +683,6 @@ class Todo extends DataClass implements Insertable<Todo> {
     String? title,
     String? description,
     bool? completed,
-    Value<String?> dhisProgramId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => Todo(
@@ -683,9 +691,6 @@ class Todo extends DataClass implements Insertable<Todo> {
     title: title ?? this.title,
     description: description ?? this.description,
     completed: completed ?? this.completed,
-    dhisProgramId: dhisProgramId.present
-        ? dhisProgramId.value
-        : this.dhisProgramId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -698,9 +703,6 @@ class Todo extends DataClass implements Insertable<Todo> {
           ? data.description.value
           : this.description,
       completed: data.completed.present ? data.completed.value : this.completed,
-      dhisProgramId: data.dhisProgramId.present
-          ? data.dhisProgramId.value
-          : this.dhisProgramId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -714,7 +716,6 @@ class Todo extends DataClass implements Insertable<Todo> {
           ..write('title: $title, ')
           ..write('description: $description, ')
           ..write('completed: $completed, ')
-          ..write('dhisProgramId: $dhisProgramId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -728,7 +729,6 @@ class Todo extends DataClass implements Insertable<Todo> {
     title,
     description,
     completed,
-    dhisProgramId,
     createdAt,
     updatedAt,
   );
@@ -741,7 +741,6 @@ class Todo extends DataClass implements Insertable<Todo> {
           other.title == this.title &&
           other.description == this.description &&
           other.completed == this.completed &&
-          other.dhisProgramId == this.dhisProgramId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -752,7 +751,6 @@ class TodosCompanion extends UpdateCompanion<Todo> {
   final Value<String> title;
   final Value<String> description;
   final Value<bool> completed;
-  final Value<String?> dhisProgramId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   const TodosCompanion({
@@ -761,7 +759,6 @@ class TodosCompanion extends UpdateCompanion<Todo> {
     this.title = const Value.absent(),
     this.description = const Value.absent(),
     this.completed = const Value.absent(),
-    this.dhisProgramId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   });
@@ -771,7 +768,6 @@ class TodosCompanion extends UpdateCompanion<Todo> {
     required String title,
     this.description = const Value.absent(),
     this.completed = const Value.absent(),
-    this.dhisProgramId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
   }) : userId = Value(userId),
@@ -782,7 +778,6 @@ class TodosCompanion extends UpdateCompanion<Todo> {
     Expression<String>? title,
     Expression<String>? description,
     Expression<bool>? completed,
-    Expression<String>? dhisProgramId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
   }) {
@@ -792,7 +787,6 @@ class TodosCompanion extends UpdateCompanion<Todo> {
       if (title != null) 'title': title,
       if (description != null) 'description': description,
       if (completed != null) 'completed': completed,
-      if (dhisProgramId != null) 'dhis_program_id': dhisProgramId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
     });
@@ -804,7 +798,6 @@ class TodosCompanion extends UpdateCompanion<Todo> {
     Value<String>? title,
     Value<String>? description,
     Value<bool>? completed,
-    Value<String?>? dhisProgramId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
   }) {
@@ -814,7 +807,6 @@ class TodosCompanion extends UpdateCompanion<Todo> {
       title: title ?? this.title,
       description: description ?? this.description,
       completed: completed ?? this.completed,
-      dhisProgramId: dhisProgramId ?? this.dhisProgramId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -838,9 +830,6 @@ class TodosCompanion extends UpdateCompanion<Todo> {
     if (completed.present) {
       map['completed'] = Variable<bool>(completed.value);
     }
-    if (dhisProgramId.present) {
-      map['dhis_program_id'] = Variable<String>(dhisProgramId.value);
-    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -858,7 +847,6 @@ class TodosCompanion extends UpdateCompanion<Todo> {
           ..write('title: $title, ')
           ..write('description: $description, ')
           ..write('completed: $completed, ')
-          ..write('dhisProgramId: $dhisProgramId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -1211,6 +1199,7 @@ typedef $$UsersTableCreateCompanionBuilder =
     UsersCompanion Function({
       Value<int> id,
       required String email,
+      Value<String> name,
       required String passwordHash,
       required String salt,
       Value<DateTime> createdAt,
@@ -1219,6 +1208,7 @@ typedef $$UsersTableUpdateCompanionBuilder =
     UsersCompanion Function({
       Value<int> id,
       Value<String> email,
+      Value<String> name,
       Value<String> passwordHash,
       Value<String> salt,
       Value<DateTime> createdAt,
@@ -1263,6 +1253,11 @@ class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
 
   ColumnFilters<String> get email => $composableBuilder(
     column: $table.email,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1326,6 +1321,11 @@ class $$UsersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get passwordHash => $composableBuilder(
     column: $table.passwordHash,
     builder: (column) => ColumnOrderings(column),
@@ -1356,6 +1356,9 @@ class $$UsersTableAnnotationComposer
 
   GeneratedColumn<String> get email =>
       $composableBuilder(column: $table.email, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
 
   GeneratedColumn<String> get passwordHash => $composableBuilder(
     column: $table.passwordHash,
@@ -1424,12 +1427,14 @@ class $$UsersTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<String> email = const Value.absent(),
+                Value<String> name = const Value.absent(),
                 Value<String> passwordHash = const Value.absent(),
                 Value<String> salt = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => UsersCompanion(
                 id: id,
                 email: email,
+                name: name,
                 passwordHash: passwordHash,
                 salt: salt,
                 createdAt: createdAt,
@@ -1438,12 +1443,14 @@ class $$UsersTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 required String email,
+                Value<String> name = const Value.absent(),
                 required String passwordHash,
                 required String salt,
                 Value<DateTime> createdAt = const Value.absent(),
               }) => UsersCompanion.insert(
                 id: id,
                 email: email,
+                name: name,
                 passwordHash: passwordHash,
                 salt: salt,
                 createdAt: createdAt,
@@ -1502,7 +1509,6 @@ typedef $$TodosTableCreateCompanionBuilder =
       required String title,
       Value<String> description,
       Value<bool> completed,
-      Value<String?> dhisProgramId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
     });
@@ -1513,7 +1519,6 @@ typedef $$TodosTableUpdateCompanionBuilder =
       Value<String> title,
       Value<String> description,
       Value<bool> completed,
-      Value<String?> dhisProgramId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
     });
@@ -1565,11 +1570,6 @@ class $$TodosTableFilterComposer extends Composer<_$AppDatabase, $TodosTable> {
 
   ColumnFilters<bool> get completed => $composableBuilder(
     column: $table.completed,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get dhisProgramId => $composableBuilder(
-    column: $table.dhisProgramId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1636,11 +1636,6 @@ class $$TodosTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get dhisProgramId => $composableBuilder(
-    column: $table.dhisProgramId,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -1697,11 +1692,6 @@ class $$TodosTableAnnotationComposer
 
   GeneratedColumn<bool> get completed =>
       $composableBuilder(column: $table.completed, builder: (column) => column);
-
-  GeneratedColumn<String> get dhisProgramId => $composableBuilder(
-    column: $table.dhisProgramId,
-    builder: (column) => column,
-  );
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -1766,7 +1756,6 @@ class $$TodosTableTableManager
                 Value<String> title = const Value.absent(),
                 Value<String> description = const Value.absent(),
                 Value<bool> completed = const Value.absent(),
-                Value<String?> dhisProgramId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => TodosCompanion(
@@ -1775,7 +1764,6 @@ class $$TodosTableTableManager
                 title: title,
                 description: description,
                 completed: completed,
-                dhisProgramId: dhisProgramId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
@@ -1786,7 +1774,6 @@ class $$TodosTableTableManager
                 required String title,
                 Value<String> description = const Value.absent(),
                 Value<bool> completed = const Value.absent(),
-                Value<String?> dhisProgramId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
               }) => TodosCompanion.insert(
@@ -1795,7 +1782,6 @@ class $$TodosTableTableManager
                 title: title,
                 description: description,
                 completed: completed,
-                dhisProgramId: dhisProgramId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),

@@ -36,7 +36,11 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 2));
 
       expect(
-        await harness.auth.signUp('integration@example.dev', 'password12'),
+        await harness.auth.signUp(
+          'Integration User',
+          'integration@example.dev',
+          'password12',
+        ),
         isNull,
       );
       await tester.pumpAndSettle(const Duration(seconds: 2));
