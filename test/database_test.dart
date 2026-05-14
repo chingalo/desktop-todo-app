@@ -18,13 +18,13 @@ void main() {
       email: 'user@test.dev',
       passwordHash: 'hash',
       salt: 'salt',
+      name: 'Test User',
     );
 
     final tid = await db.insertTodo(
       userId: userId,
       title: 'Buy milk',
       description: '2%',
-      dhisProgramId: 'prog-1',
     );
 
     var list = await db.watchTodosForUser(userId).first;

@@ -10,6 +10,7 @@ part 'database.g.dart';
 class Users extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get email => text().unique()();
+  TextColumn get name => text().withDefault(const Constant(''))();
   TextColumn get passwordHash => text()();
   TextColumn get salt => text()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -22,7 +23,6 @@ class Todos extends Table {
   TextColumn get title => text().withLength(min: 1, max: 400)();
   TextColumn get description => text().withDefault(const Constant(''))();
   BoolColumn get completed => boolean().withDefault(const Constant(false))();
-  TextColumn get dhisProgramId => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 }
@@ -43,18 +43,33 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (m) async => await m.createAll(),
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.addColumn(users, users.name);
+        await m.database.customStatement(
+          'ALTER TABLE todos DROP COLUMN dhis_program_id',
+        );
+      }
+    },
+  );
 
   Future<int> createUser({
     required String email,
     required String passwordHash,
     required String salt,
+    String name = '',
   }) {
     return into(users).insert(
       UsersCompanion.insert(
         email: email,
         passwordHash: passwordHash,
         salt: salt,
+        name: Value(name),
       ),
     );
   }
@@ -79,14 +94,12 @@ class AppDatabase extends _$AppDatabase {
     required int userId,
     required String title,
     String description = '',
-    String? dhisProgramId,
   }) {
     return into(todos).insert(
       TodosCompanion.insert(
         userId: userId,
         title: title,
         description: Value(description),
-        dhisProgramId: Value(dhisProgramId),
       ),
     );
   }
@@ -97,7 +110,6 @@ class AppDatabase extends _$AppDatabase {
         title: Value(row.title),
         description: Value(row.description),
         completed: Value(row.completed),
-        dhisProgramId: Value(row.dhisProgramId),
         updatedAt: Value(DateTime.now()),
       ),
     );

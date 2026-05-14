@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
@@ -30,39 +31,54 @@ class DhisClient {
     String? username,
     String? password,
   }) async {
-    final uri = Uri.parse(programsUrl ?? defaultProgramsUrl);
-    final user = username ?? defaultUsername;
-    final pass = password ?? defaultPassword;
-    final basic = base64Encode(utf8.encode('$user:$pass'));
-    final response = await _http.get(
-      uri,
-      headers: {'Authorization': 'Basic $basic', 'Accept': 'application/json'},
-    );
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw DhisHttpException(response.statusCode, response.body);
+    try {
+      final uri = Uri.parse(programsUrl ?? defaultProgramsUrl);
+      final user = username ?? defaultUsername;
+      final pass = password ?? defaultPassword;
+      final basic = base64Encode(utf8.encode('$user:$pass'));
+      final response = await _http.get(
+        uri,
+        headers: {
+          'Authorization': 'Basic $basic',
+          'Accept': 'application/json',
+        },
+      );
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw DhisHttpException(response.statusCode, response.body);
+      }
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) {
+        throw const FormatException('Expected a JSON object from DHIS2');
+      }
+      final raw = decoded['programs'];
+      if (raw is! List<dynamic>) {
+        return const [];
+      }
+      return raw
+          .map((e) {
+            final m = e as Map<String, dynamic>;
+            final id = m['id']?.toString() ?? '';
+            final name = (m['displayName'] ?? m['name'] ?? id).toString();
+            final short = (m['shortName'] ?? '').toString();
+            return DhisProgramSummary(
+              id: id,
+              displayName: name,
+              shortName: short,
+            );
+          })
+          .where((p) => p.id.isNotEmpty)
+          .toList();
+    } on DhisHttpException {
+      rethrow;
+    } on FormatException {
+      rethrow;
+    } on SocketException catch (e) {
+      throw DhisNetworkException(e.message);
+    } on http.ClientException catch (e) {
+      throw DhisNetworkException(e.message);
+    } catch (e) {
+      throw DhisNetworkException(e.toString());
     }
-    final decoded = jsonDecode(response.body);
-    if (decoded is! Map<String, dynamic>) {
-      throw const FormatException('Expected a JSON object from DHIS2');
-    }
-    final raw = decoded['programs'];
-    if (raw is! List<dynamic>) {
-      return const [];
-    }
-    return raw
-        .map((e) {
-          final m = e as Map<String, dynamic>;
-          final id = m['id']?.toString() ?? '';
-          final name = (m['displayName'] ?? m['name'] ?? id).toString();
-          final short = (m['shortName'] ?? '').toString();
-          return DhisProgramSummary(
-            id: id,
-            displayName: name,
-            shortName: short,
-          );
-        })
-        .where((p) => p.id.isNotEmpty)
-        .toList();
   }
 }
 
@@ -74,4 +90,13 @@ class DhisHttpException implements Exception {
 
   @override
   String toString() => 'DHIS2 request failed ($statusCode)';
+}
+
+class DhisNetworkException implements Exception {
+  DhisNetworkException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => 'Network error: $message';
 }

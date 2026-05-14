@@ -15,6 +15,7 @@ class _AuthScreenState extends State<AuthScreen>
   late final TabController _tabs;
   final _signInEmail = TextEditingController();
   final _signInPassword = TextEditingController();
+  final _signUpName = TextEditingController();
   final _signUpEmail = TextEditingController();
   final _signUpPassword = TextEditingController();
   bool _busy = false;
@@ -30,6 +31,7 @@ class _AuthScreenState extends State<AuthScreen>
     _tabs.dispose();
     _signInEmail.dispose();
     _signInPassword.dispose();
+    _signUpName.dispose();
     _signUpEmail.dispose();
     _signUpPassword.dispose();
     super.dispose();
@@ -37,23 +39,43 @@ class _AuthScreenState extends State<AuthScreen>
 
   Future<void> _signIn() async {
     setState(() => _busy = true);
-    final auth = context.read<AuthController>();
-    final err = await auth.signIn(_signInEmail.text, _signInPassword.text);
-    if (!mounted) return;
-    setState(() => _busy = false);
-    if (err != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+    try {
+      final auth = context.read<AuthController>();
+      final err = await auth.signIn(_signInEmail.text, _signInPassword.text);
+      if (!mounted) return;
+      if (err != null) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Sign in failed: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
   Future<void> _signUp() async {
     setState(() => _busy = true);
-    final auth = context.read<AuthController>();
-    final err = await auth.signUp(_signUpEmail.text, _signUpPassword.text);
-    if (!mounted) return;
-    setState(() => _busy = false);
-    if (err != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+    try {
+      final auth = context.read<AuthController>();
+      final err = await auth.signUp(
+        _signUpName.text,
+        _signUpEmail.text,
+        _signUpPassword.text,
+      );
+      if (!mounted) return;
+      if (err != null) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Sign up failed: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
@@ -111,7 +133,7 @@ class _AuthScreenState extends State<AuthScreen>
                     ),
                     const SizedBox(height: 16),
                     SizedBox(
-                      height: 280,
+                      height: 320,
                       child: TabBarView(
                         controller: _tabs,
                         children: [
@@ -124,6 +146,7 @@ class _AuthScreenState extends State<AuthScreen>
                             passwordKey: const ValueKey('signin_password'),
                           ),
                           _AuthFields(
+                            name: _signUpName,
                             email: _signUpEmail,
                             password: _signUpPassword,
                             actionLabel: 'Create account',
@@ -131,6 +154,7 @@ class _AuthScreenState extends State<AuthScreen>
                             passwordHint: 'At least 8 characters',
                             emailKey: const ValueKey('signup_email'),
                             passwordKey: const ValueKey('signup_password'),
+                            nameKey: const ValueKey('signup_name'),
                             submitButtonKey: const ValueKey('signup_submit'),
                           ),
                         ],
@@ -154,12 +178,15 @@ class _AuthFields extends StatelessWidget {
     required this.password,
     required this.actionLabel,
     required this.onSubmit,
+    this.name,
     this.passwordHint,
     this.emailKey,
     this.passwordKey,
+    this.nameKey,
     this.submitButtonKey,
   });
 
+  final TextEditingController? name;
   final TextEditingController email;
   final TextEditingController password;
   final String actionLabel;
@@ -167,6 +194,7 @@ class _AuthFields extends StatelessWidget {
   final String? passwordHint;
   final Key? emailKey;
   final Key? passwordKey;
+  final Key? nameKey;
   final Key? submitButtonKey;
 
   @override
@@ -174,6 +202,20 @@ class _AuthFields extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (name != null) ...[
+          TextField(
+            key: nameKey,
+            controller: name,
+            textCapitalization: TextCapitalization.words,
+            autofillHints: const [AutofillHints.name],
+            decoration: const InputDecoration(
+              labelText: 'Name',
+              prefixIcon: Icon(Icons.badge_outlined),
+            ),
+            onSubmitted: (_) => onSubmit?.call(),
+          ),
+          const SizedBox(height: 12),
+        ],
         TextField(
           key: emailKey,
           controller: email,

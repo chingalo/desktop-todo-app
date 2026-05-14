@@ -151,6 +151,20 @@ class _ProgramsPageState extends State<ProgramsPage> {
             child: StreamBuilder<List<CachedProgram>>(
               stream: db.watchCachedPrograms(),
               builder: (context, snap) {
+                if (snap.hasError) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                        'Could not read cached programs.\n${snap.error}',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ),
+                  );
+                }
                 final rows = snap.data ?? [];
                 if (!snap.hasData) {
                   return const Center(child: CircularProgressIndicator());
