@@ -90,6 +90,16 @@ class AppDatabase extends _$AppDatabase {
         .watch();
   }
 
+  Future<List<Todo>> todosForUser(int userId) {
+    return (select(todos)
+          ..where((t) => t.userId.equals(userId))
+          ..orderBy([
+            (t) =>
+                OrderingTerm(expression: t.updatedAt, mode: OrderingMode.desc),
+          ]))
+        .get();
+  }
+
   Future<int> insertTodo({
     required int userId,
     required String title,

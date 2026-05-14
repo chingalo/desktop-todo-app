@@ -5,11 +5,9 @@ import '../services/crypto_utils.dart';
 import 'session_store.dart';
 
 class AuthController extends ChangeNotifier {
-  AuthController({
-    required AppDatabase database,
-    SessionStore? sessionStore,
-  }) : _db = database,
-       _session = sessionStore ?? SecureSessionStore();
+  AuthController({required AppDatabase database, SessionStore? sessionStore})
+    : _db = database,
+      _session = sessionStore ?? SecureSessionStore();
 
   final AppDatabase _db;
   final SessionStore _session;
@@ -61,7 +59,7 @@ class AuthController extends ChangeNotifier {
         debugPrint('signUp failed: $e\n$st');
         return true;
       }());
-      return 'Could not create your account. Please try again.';
+      return 'Could not create your account. Please try again.\n$e\n$st';
     }
   }
 
@@ -81,7 +79,7 @@ class AuthController extends ChangeNotifier {
         debugPrint('signIn failed: $e\n$st');
         return true;
       }());
-      return 'Could not sign in. Please try again.';
+      return 'Could not sign in. Please try again.\n$e\n$st';
     }
   }
 
