@@ -39,6 +39,14 @@ jobs:
       - name: Generate Drift code
         working-directory: ${{ env.FLUTTER_PROJECT_PATH }}
         run: dart run build_runner build
+      
+      - name: Analyze
+        working-directory: ${{ env.FLUTTER_PROJECT_PATH }}
+        run: flutter analyze
+
+      - name: Test
+        working-directory: ${{ env.FLUTTER_PROJECT_PATH }}
+        run: flutter test
 
       - name: Set macOS product name from repository
         if: >-
