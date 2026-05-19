@@ -86,6 +86,16 @@ class AppDatabase extends _$AppDatabase {
     )..where((u) => u.email.equals(email))).getSingleOrNull();
   }
 
+  Future<User?> userById(int id) {
+    return (select(users)..where((u) => u.id.equals(id))).getSingleOrNull();
+  }
+
+  Stream<User?> watchUser(int id) {
+    return (select(users)..where((u) => u.id.equals(id)))
+        .watch()
+        .map((rows) => rows.isEmpty ? null : rows.first);
+  }
+
   Stream<List<Todo>> watchTodosForUser(int userId) {
     return (select(todos)
           ..where((t) => t.userId.equals(userId))

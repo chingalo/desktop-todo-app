@@ -5,10 +5,13 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/database.dart';
+import '../../services/official_receipt_pdf.dart';
 import '../../state/auth_controller.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
+
+  static bool _receiptPrintInProgress = false;
 
   static Map<String, dynamic> _todoToJson(Todo t) => {
     'id': t.id,
@@ -86,6 +89,41 @@ class SettingsPage extends StatelessWidget {
           onTap: () async {
             await auth.signOut();
           },
+        ),
+        const Divider(),
+        ListTile(
+          leading: const Icon(Icons.picture_as_pdf_outlined),
+          title: const Text('Print official receipt (PDF, A4)'),
+          subtitle: const Text(
+            'Opens the print dialog so you can save or print the Kanisani Hub sample receipt.',
+          ),
+          enabled: userId != null,
+          onTap: userId == null
+              ? null
+              : () async {
+                  if (_receiptPrintInProgress) return;
+                  _receiptPrintInProgress = true;
+                  try {
+                    final user = await db.userById(userId);
+                    if (!context.mounted) return;
+                    if (user == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Could not load your profile for the receipt.'),
+                        ),
+                      );
+                      return;
+                    }
+                    await OfficialReceiptPdf.showPrintDialog(user);
+                  } catch (e) {
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Could not prepare PDF: $e')),
+                    );
+                  } finally {
+                    _receiptPrintInProgress = false;
+                  }
+                },
         ),
         const Divider(),
         ListTile(
