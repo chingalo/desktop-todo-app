@@ -49,3 +49,32 @@ On **push to `main`**, workflows patch the desktop product name from **`github.e
 
 PR builds do not patch names or upload artifacts.
 
+## Branding and icons
+
+Branding uses the **CHINGALO Family Information Systems** logo at [`assets/images/chingalo_receipt_logo.png`](assets/images/chingalo_receipt_logo.png) (1024×1024 source artwork).
+
+### App icon (macOS and Windows)
+
+Desktop launcher icons are generated from that asset via [`flutter_launcher_icons`](https://pub.dev/packages/flutter_launcher_icons) (configured in `pubspec.yaml`):
+
+| Platform | Output |
+|----------|--------|
+| **macOS** | `macos/Runner/Assets.xcassets/AppIcon.appiconset/` (PNG sizes 16–1024) |
+| **Windows** | `windows/runner/resources/app_icon.ico` |
+
+Regenerate after changing the source image:
+
+```bash
+dart run flutter_launcher_icons
+flutter clean
+flutter build macos --release    # or flutter build windows --release
+```
+
+Icons are committed to the repo so CI (`windows_release.yml` and macOS workflows) picks them up automatically—no extra workflow steps.
+
+Use a **square** master PNG (1024×1024 recommended). For sharper Dock/taskbar icons at small sizes, consider a cropped icon-only variant; the full logo with wordmark is what ships today.
+
+### Receipt PDF logo
+
+Official receipt PDFs (Settings → **Print official receipt**) embed the same asset in the header via `lib/services/official_receipt_pdf.dart`. Restart the app after asset changes so `rootBundle` reloads.
+
