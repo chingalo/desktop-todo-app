@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart' show Offset, Rect, Size;
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart' show PdfPageFormat;
 import 'package:printing/printing.dart';
@@ -14,6 +15,8 @@ import '../data/database.dart';
 /// (community or commercial license applies). Printing uses the `printing` package.
 class OfficialReceiptPdf {
   OfficialReceiptPdf._();
+
+  static const String _logoAsset = 'assets/images/chingalo_receipt_logo.png';
 
   static final PdfColor _teal = PdfColor(0, 90, 113); // #005a71
   static final PdfColor _textGray = PdfColor(107, 114, 128);
@@ -29,6 +32,11 @@ class OfficialReceiptPdf {
 
   static PdfPen _penHeaderBorder() => PdfPen(_outlineVariant, width: 0.6);
   static PdfPen _penRowBorder() => PdfPen(_rowDivider, width: 0.4);
+
+  static Future<Uint8List> _loadLogoBytes() async {
+    final data = await rootBundle.load(_logoAsset);
+    return data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+  }
 
   /// Opens the system print / save-as-PDF sheet with a fixed A4 layout.
   static Future<void> showPrintDialog(User user) async {
@@ -60,6 +68,7 @@ class OfficialReceiptPdf {
     final printedStr = DateFormat("MMMM d, yyyy | HH:mm:ss").format(issued);
     final monthName = DateFormat.MMMM().format(issued);
     final fonts = _ReceiptFonts();
+    final logoImage = PdfBitmap(await _loadLogoBytes());
 
     final document = PdfDocument();
     try {
@@ -72,21 +81,14 @@ class OfficialReceiptPdf {
 
       var y = 0.0;
       const leftBlockW = 320.0;
-      const logo = 52.0;
+      const logoSize = 64.0;
 
-      g.drawRectangle(
-        bounds: Rect.fromLTWH(0, y, logo, logo),
-        brush: PdfSolidBrush(_teal),
-      );
-      g.drawString(
-        '+',
-        PdfStandardFont(PdfFontFamily.helvetica, 28, style: PdfFontStyle.bold),
-        brush: PdfBrushes.white,
-        bounds: Rect.fromLTWH(0, y + 8, logo, logo),
-        format: PdfStringFormat(alignment: PdfTextAlignment.center),
+      g.drawImage(
+        logoImage,
+        Rect.fromLTWH(0, y, logoSize, logoSize),
       );
 
-      var tx = logo + 14;
+      var tx = logoSize + 14;
       g.drawString(
         "ST. PETER'S PARISH",
         fonts.bold18,
@@ -146,7 +148,7 @@ class OfficialReceiptPdf {
         format: PdfStringFormat(alignment: PdfTextAlignment.right),
       );
 
-      y = logo + 28;
+      y = logoSize + 28;
       g.drawLine(PdfPen(_teal, width: 2.5), Offset(0, y), Offset(w, y));
       y += 18;
 
